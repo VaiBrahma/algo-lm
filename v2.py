@@ -88,16 +88,20 @@ class MultiHeadAttention(nn.Module):
     def __init__(self, num_heads, head_size):
         super().__init__()
         self.heads = nn.ModuleList([Head(head_size) for _ in range(num_heads)])
+        self.proj = nn.Linear(n_embd, n_embd)
         
     def forward(self, x):
-        return torch.cat([h(x) for h in self.heads], dim=-1)
+        out = torch.cat([h(x) for h in self.heads], dim=-1)
+        out = self.proj(out)
+        return out
 
 class FeedForward(nn.Module):
-    def __init__(self, x):
+    def __init__(self):
         super().__init__()
         self.net = nn.Sequential(
-            nn.Linear(n_embd, n_embd),
+            nn.Linear(n_embd, 4 * n_embd),
             nn.ReLU(),
+            nn.Linear(4 * n_embd, n_embd)
         )
         
     def forward(self, x):
@@ -111,11 +115,11 @@ class Block(nn.Module):
         super().__init__()
         head_size = n_embd // n_head
         self.sa_head = MultiHeadAttention(n_head, head_size) # i.e. 4 heads of 8-dimensional self-attention
-        self.ffwd = FeedForward(n_embd)
+        self.ffwd = FeedForward()
     
     def forward(self, x):
-        x = self.sa_head(x) # apply one head of self-attention (B, T, C)
-        x = self.ffwd(x) # (B, T, C)
+        x = x + self.sa_head(x) # apply one head of self-attention (B, T, C)
+        x = x + self.ffwd(x) # (B, T, C)
         return x
 
 # super simple bigram model
@@ -127,8 +131,8 @@ class BigramLanguageModel(nn.Module):
         self.position_embedding_table = nn.Embedding(block_size, n_embd)
         self.blocks = nn.Sequential(
             Block(n_embd, n_head=4),
-            # Block(n_embd, n_head=4),
-            # Block(n_embd, n_head=4),
+            Block(n_embd, n_head=4),
+            Block(n_embd, n_head=4),
         )
         self.lm_head = nn.Linear(n_embd, vocab_size)
     
