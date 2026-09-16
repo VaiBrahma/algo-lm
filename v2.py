@@ -81,15 +81,26 @@ class Head(nn.Module):
 
         # perform the weighted aggregation of the values
         v = self.value(x)
-        out = wei @ x
+        out = wei @ v
         return out
+    
+class MultiHeadAttention(nn.Module):
+    def __init__(self, num_heads, head_size):
+        super().__init__()
+        self.heads = nn.ModuleList([Head(head_size) for _ in range(num_heads)])
+        
+    def forward(self, x):
+        return torch.cat([h(x) for h in self.heads], dim=-1)
 
+
+# super simple bigram model
 class BigramLanguageModel(nn.Module):
     def __init__(self):
         super().__init__()
+        # each token directly reads off the logits for the next token from the lookup table
         self.token_embedding_table = nn.Embedding(vocab_size, n_embd)
         self.position_embedding_table = nn.Embedding(block_size, n_embd)
-        self.sa_head = Head(n_embd)
+        self.sa_head = MultiHeadAttention(4, n_embd // 4) # i.e. 4 heads of 8-dimensional self-attention
         self.lm_head = nn.Linear(n_embd, vocab_size)
     
     def forward(self, idx, targets = None):
@@ -142,6 +153,7 @@ for iter in range(max_iters):
     loss.backward()
     optimizer.step()
     
-context = 'To be or not to be, that is the '
+print('\n')
+context = 'To be or not to be, that is the'
 idx = torch.tensor([encode(context)], dtype=torch.long, device=device)
 print(decode(model.generate(idx, max_new_tokens=500)[0].tolist()))
