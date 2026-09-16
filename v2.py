@@ -106,10 +106,13 @@ class Block(nn.Module):
         head_size = n_embd // n_head
         self.sa_head = MultiHeadAttention(n_head, head_size) # i.e. 4 heads of 8-dimensional self-attention
         self.ffwd = FeedForward()
+        self.ln1 = nn.LayerNorm(n_embd)
+        self.ln2 = nn.LayerNorm(n_embd)
     
     def forward(self, x):
-        x = x + self.sa_head(x) # apply one head of self-attention (B, T, C)
-        x = x + self.ffwd(x) # (B, T, C)
+        x = x + self.sa_head(self.ln1(x)) # apply one head of self-attention (B, T, C)
+        x = x + self.ffwd(self.ln2(x)) # (B, T, C)
+        # note: the layernorm is prenorm: one of the few changes to 2017 transformer
         return x
 
 class FeedForward(nn.Module):
@@ -132,6 +135,7 @@ class BigramLanguageModel(nn.Module):
         self.token_embedding_table = nn.Embedding(vocab_size, n_embd)
         self.position_embedding_table = nn.Embedding(block_size, n_embd)
         self.blocks = nn.Sequential(*[Block(n_embd, n_head=4) for _ in range(num_layers)])
+        self.lnf = nn.LayerNorm(n_embd) # final layer norm
         self.lm_head = nn.Linear(n_embd, vocab_size)
     
     def forward(self, idx, targets = None):
@@ -141,6 +145,7 @@ class BigramLanguageModel(nn.Module):
         pos_emb = self.position_embedding_table(torch.arange(T, device=device)) # (T, C)
         x = tok_emb + pos_emb # (B, T, C=n_embd) (if dim are not same they are broadcasted to each batch)
         x = self.blocks(x)
+        x = self.lnf(x)
         logits = self.lm_head(x) # (B, T, C=vocab_size)
         
         if targets is None:
