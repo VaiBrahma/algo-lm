@@ -12,6 +12,8 @@ learning_rate = 1e-2
 device = 'cpu'
 eval_iters = 200
 n_embd = 32
+num_layers = 3
+#-----------------
 
 torch.manual_seed(1337)
 
@@ -30,7 +32,7 @@ itos = { i:ch for i, ch in enumerate(chars) }
 encode = lambda s : [stoi[c] for c in s]
 decode = lambda l : ''.join(itos[i] for i in l)
 
-# Train and Test split
+# Train and Val split
 data = torch.tensor(encode(text), dtype=torch.long)
 n = int(0.9 * len(data))
 train_data = data[:n]
@@ -95,18 +97,6 @@ class MultiHeadAttention(nn.Module):
         out = self.proj(out)
         return out
 
-class FeedForward(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.net = nn.Sequential(
-            nn.Linear(n_embd, 4 * n_embd),
-            nn.ReLU(),
-            nn.Linear(4 * n_embd, n_embd)
-        )
-        
-    def forward(self, x):
-        return self.net(x)
-
 class Block(nn.Module):
     """ Transformer Block: communication followed by computation """
 
@@ -122,6 +112,18 @@ class Block(nn.Module):
         x = x + self.ffwd(x) # (B, T, C)
         return x
 
+class FeedForward(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(n_embd, 4 * n_embd),
+            nn.ReLU(),
+            nn.Linear(4 * n_embd, n_embd)
+        )
+        
+    def forward(self, x):
+        return self.net(x)
+
 # super simple bigram model
 class BigramLanguageModel(nn.Module):
     def __init__(self):
@@ -129,11 +131,7 @@ class BigramLanguageModel(nn.Module):
         # each token directly reads off the logits for the next token from the lookup table
         self.token_embedding_table = nn.Embedding(vocab_size, n_embd)
         self.position_embedding_table = nn.Embedding(block_size, n_embd)
-        self.blocks = nn.Sequential(
-            Block(n_embd, n_head=4),
-            Block(n_embd, n_head=4),
-            Block(n_embd, n_head=4),
-        )
+        self.blocks = nn.Sequential(*[Block(n_embd, n_head=4) for _ in range(num_layers)])
         self.lm_head = nn.Linear(n_embd, vocab_size)
     
     def forward(self, idx, targets = None):
