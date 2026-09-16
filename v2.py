@@ -13,6 +13,7 @@ device = 'cpu'
 eval_iters = 200
 n_embd = 32
 num_layers = 3
+n_head = 4
 #-----------------
 
 torch.manual_seed(1337)
@@ -134,7 +135,7 @@ class BigramLanguageModel(nn.Module):
         # each token directly reads off the logits for the next token from the lookup table
         self.token_embedding_table = nn.Embedding(vocab_size, n_embd)
         self.position_embedding_table = nn.Embedding(block_size, n_embd)
-        self.blocks = nn.Sequential(*[Block(n_embd, n_head=4) for _ in range(num_layers)])
+        self.blocks = nn.Sequential(*[Block(n_embd, n_head=n_head) for _ in range(num_layers)])
         self.lnf = nn.LayerNorm(n_embd) # final layer norm
         self.lm_head = nn.Linear(n_embd, vocab_size)
     
