@@ -199,3 +199,6 @@ print('\n')
 context = 'To be or not to be, that is the'
 idx = torch.tensor([encode(context)], dtype=torch.long, device=device)
 print(decode(model.generate(idx, max_new_tokens=500)[0].tolist()))
+
+torch.save(model.state_dict(), 'transformer_model.pth')
+print("Model saved successfully!")
