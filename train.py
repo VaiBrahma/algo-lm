@@ -45,6 +45,9 @@ for iter in range(train_config.max_iters):
         loss_history['iters'].append(iter)
         loss_history['train_loss'].append(losses['train'])
         loss_history['val_loss'].append(losses['val'])
+        
+        with open('loss_history.json', 'w') as f:
+            json.dump(loss_history, f)
             
     # Forward pass
     xb, yb = get_batch('train')
@@ -63,6 +66,3 @@ checkpoint = {
 }
 torch.save(checkpoint, 'algo_lm_checkpoint.pth')
 print('', 'Training Complete. Model saved.', '', sep='\n-------------------------------\n')
-
-with open('loss_history.json', 'w') as f:
-    json.dump(loss_history, f)
