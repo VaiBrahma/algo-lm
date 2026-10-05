@@ -8,7 +8,7 @@ class GPTConfig:
     vocab_size: int = 65 # Default, overwritten by train.py
     n_embd: int = 384
     n_head: int = 6
-    n_layer: int = 6
+    n_layers: int = 6
     dropout: float = 0.2
 
 @dataclass
@@ -29,7 +29,7 @@ def get_mac_debug_config():
         block_size=64,       # Smaller context window saves memory
         n_embd=128,          # Smaller embeddings
         n_head=4,
-        n_layer=4,
+        n_layers=4,
         dropout=0.0          # No dropout needed for a quick debug run
     )
     
@@ -50,7 +50,7 @@ def get_colab_gpu_config():
         block_size=256,      # Full context window
         n_embd=384,          # Deep embeddings (384 / 6 = 64 head size)
         n_head=6,
-        n_layer=6,
+        n_layers=6,
         dropout=0.2          # Standard dropout to prevent overfitting
     )
     
