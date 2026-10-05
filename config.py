@@ -35,7 +35,7 @@ def get_mac_debug_config():
     
     train_cfg = TrainConfig(
         batch_size=12,       # Small batch size so your Mac doesn't freeze
-        max_iters=100,       # Only run a few iterations to test the pipeline
+        max_iters=1500,       # Only run a few iterations to test the pipeline
         eval_interval=20,    # Check loss frequently
         eval_iters=10,
         learning_rate=1e-3,  # Faster learning rate for a tiny model
