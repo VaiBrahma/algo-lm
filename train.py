@@ -1,5 +1,5 @@
 import json
-
+from tqdm import tqdm
 import torch
 from config import GPTConfig, get_mac_debug_config
 from model import GPT2 
@@ -36,7 +36,7 @@ model.train()
 
 print('', f"Using device: {device}", "Starting training...", '', sep='\n--------------------\n')
 
-for iter in range(train_config.max_iters):
+for iter in tqdm(range(train_config.max_iters), desc="Training alog-lm"):
     
     # Evaluate occasionally
     if iter % train_config.eval_interval == 0 or iter == train_config.max_iters - 1:
