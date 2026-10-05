@@ -34,7 +34,8 @@ loss_history = {
 }
 model.train() 
 
-print("Starting training...")
+print('', f"Using device: {device}", "Starting training...", '', sep='\n--------------------\n')
+
 for iter in range(train_config.max_iters):
     
     # Evaluate occasionally
@@ -61,7 +62,7 @@ checkpoint = {
     'config': gpt_config,
 }
 torch.save(checkpoint, 'algo_lm_checkpoint.pth')
-print('\nTraining Complete. Model saved.')
+print('', 'Training Complete. Model saved.', '', sep='\n-------------------------------\n')
 
 with open('loss_history.json', 'w') as f:
     json.dump(loss_history, f)
