@@ -27,6 +27,8 @@ def estimate_loss():
     return out
 
 # Training Loop
+print('', f"Using device: {device}", "Starting training...", '', sep='\n--------------------\n')
+
 loss_history = {
     "iters": [],
     "train_loss": [],
@@ -34,14 +36,12 @@ loss_history = {
 }
 model.train() 
 
-print('', f"Using device: {device}", "Starting training...", '', sep='\n--------------------\n')
-
 for iter in tqdm(range(train_config.max_iters), desc="Training alog-lm"):
     
     # Evaluate occasionally
     if iter % train_config.eval_interval == 0 or iter == train_config.max_iters - 1:
         losses = estimate_loss()
-        print(f"Step {iter}: Train loss {losses['train']:.4f}, Val loss: {losses['val']:.4f}")
+        tqdm.write(f"Step {iter}: Train loss {losses['train']:.4f}, Val loss: {losses['val']:.4f}")
         loss_history['iters'].append(iter)
         loss_history['train_loss'].append(losses['train'])
         loss_history['val_loss'].append(losses['val'])
