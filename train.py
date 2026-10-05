@@ -1,74 +1,67 @@
+import json
+
 import torch
-import tiktoken
 from config import GPTConfig, get_mac_debug_config
 from model import GPT2 
 from dataloader import get_batch
 
+# Setup & Configuration
 gpt_config, train_config = get_mac_debug_config()
 device = train_config.device
-
-enc = tiktoken.get_encoding('gpt2')
 
 model = GPT2(gpt_config).to(device)
 optimizer = torch.optim.AdamW(model.parameters(), lr=train_config.learning_rate)
 
-@torch.no_grad() # Tells PyTorch not to store gradients (saves memory)
+@torch.no_grad()
 def estimate_loss():
     out = {}
-    model.eval() # Turn OFF dropout for evaluation
-
+    model.eval()
     for split in ['train', 'val']:
-        # We take average loss over eval_iters (e.g., 200 batches) to reduce noise
         losses = torch.zeros(train_config.eval_iters)
-        
         for k in range(train_config.eval_iters):
             X, Y = get_batch(split)
             _, loss = model(X, Y)
             losses[k] = loss.item()
-            
         out[split] = losses.mean().item()
-        
-    model.train() # Turn dropout back ON for training
+    model.train()
     return out
 
-# 2. Training Loop
-# CRITICAL: Turn on Dropout and LayerNorm training behavior
+# Training Loop
+loss_history = {
+    "iters": [],
+    "train_loss": [],
+    "val_loss": []
+}
 model.train() 
 
+print("Starting training...")
 for iter in range(train_config.max_iters):
     
+    # Evaluate occasionally
     if iter % train_config.eval_interval == 0 or iter == train_config.max_iters - 1:
         losses = estimate_loss()
         print(f"Step {iter}: Train loss {losses['train']:.4f}, Val loss: {losses['val']:.4f}")
-        
+        loss_history['iters'].append(iter)
+        loss_history['train_loss'].append(losses['train'])
+        loss_history['val_loss'].append(losses['val'])
+            
     # Forward pass
     xb, yb = get_batch('train')
     logits, loss = model(xb, yb)
     
     # Backpropagation
-    optimizer.zero_grad(set_to_none=True) # set_to_none=True is faster than default
+    optimizer.zero_grad(set_to_none=True)
     loss.backward()
     optimizer.step()
-    
-print('\nTraining Complete.')
 
-# 3. Generation Test (algo-lm prompt)
-model.eval() # Turn OFF Dropout for generation
-
-context_text = 'int main() {'
-context_tokens = enc.encode(context_text) # tiktoken returns a list of ints
-idx = torch.tensor([context_tokens], dtype=torch.long, device=device) # Shape: (1, T)
-
-with torch.no_grad():
-    generated_indices = model.generate(idx, max_new_tokens=250)[0].tolist()
-    
-print(enc.decode(generated_indices))
-
-# 4. Save Model Checkpoint
+# Save once at the end
 checkpoint = {
     'model_state_dict': model.state_dict(),
     'optimizer_state_dict': optimizer.state_dict(),
-    'config': gpt_config, # Save the config so you know the exact shape later
+    'config': gpt_config,
 }
 torch.save(checkpoint, 'algo_lm_checkpoint.pth')
-print("\nModel checkpoint saved successfully!")
+print('\nTraining Complete. Model saved.')
+
+with open('loss_history.json', 'w') as f:
+    json.dump(loss_history, f)
