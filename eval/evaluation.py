@@ -1,7 +1,9 @@
+import os
 import json
 import matplotlib.pyplot as plt
 
-def plot_loss_curve(log_file='loss_history_colab.json'):
+file = os.path.join(os.path.dirname(__file__), 'loss_history_colab.json')
+def plot_loss_curve(log_file=file):
     try:
         # 1. Load the recorded history
         with open(log_file, 'r') as f:
@@ -36,7 +38,7 @@ def plot_loss_curve(log_file='loss_history_colab.json'):
     
     # 5. Save the image and display it
     plt.tight_layout()
-    plt.savefig('loss_curve.png', dpi=300)
+    plt.savefig(os.path.join(os.path.dirname(__file__), 'loss_curve.png'), dpi=300)
     print("Success! Graph saved to your folder as 'loss_curve.png'")
     
     # Opens a window showing the graph (close the window to end the script)
