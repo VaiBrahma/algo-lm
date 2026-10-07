@@ -1,5 +1,5 @@
 import json
-from tqdm import tqdm
+from tqdm.auto import tqdm
 import torch
 from config import GPTConfig, get_mac_debug_config
 from model import GPT2 
@@ -36,7 +36,9 @@ loss_history = {
 }
 model.train() 
 
-for iter in tqdm(range(train_config.max_iters), desc="Training alog-lm"):
+best_val_loss = float('inf')
+
+for iter in tqdm(range(train_config.max_iters), desc="Training algo-lm"):
     
     # Evaluate occasionally
     if iter % train_config.eval_interval == 0 or iter == train_config.max_iters - 1:
@@ -46,8 +48,20 @@ for iter in tqdm(range(train_config.max_iters), desc="Training alog-lm"):
         loss_history['train_loss'].append(losses['train'])
         loss_history['val_loss'].append(losses['val'])
         
-        with open('loss_history.json', 'w') as f:
-            json.dump(loss_history, f)
+        # Save checkpoint if validation loss improves
+        if losses['val'] < best_val_loss:
+            best_val_loss = losses['val']
+            checkpoint = {
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                'config': gpt_config,
+                'iter': iter,
+                'best_val_loss': best_val_loss
+            }
+            torch.save(checkpoint, 'algo_lm_checkpoint.pth')
+            
+        # with open('eval/loss_history2.json', 'w') as f:
+        #     json.dump(loss_history, f)
             
     # Forward pass
     xb, yb = get_batch('train')
@@ -58,11 +72,4 @@ for iter in tqdm(range(train_config.max_iters), desc="Training alog-lm"):
     loss.backward()
     optimizer.step()
 
-# Save once at the end
-checkpoint = {
-    'model_state_dict': model.state_dict(),
-    'optimizer_state_dict': optimizer.state_dict(),
-    'config': gpt_config,
-}
-torch.save(checkpoint, 'algo_lm_checkpoint.pth')
-print('', 'Training Complete. Model saved.', '', sep='\n-------------------------------\n')
+print('', 'Training Complete. Best model saved iteratively.', '', sep='\n-------------------------------\n')
