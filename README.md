@@ -2,13 +2,13 @@
 
 An educational, bottom-up implementation of a decoder-only Generative Pre-trained Transformer (GPT-2 architecture) built from scratch in PyTorch. 
 
-`algo-lm` is designed to demonstrate the complete lifecycle of a causal language model—from raw tokenization and low-level attention mechanics to custom pre-training on domain-specific C++ competitive programming corpora.
+`algo-lm` is designed to demonstrate the foundational lifecycle of a causal language model—from raw tokenization and low-level attention mechanics to custom pre-training and convergence analysis on domain-specific C++ competitive programming corpora.
 
 ---
 
 ## Highlights
 
-- **From-Scratch Architecture:** Manual implementation of causal multi-head self-attention, learned positional embeddings, layer normalization (prenorm configuration), and residual feed-forward networks without relying on high-level transformer abstractions (`torch.nn.Transformer`).
+- **From-Scratch Architecture:** Manual implementation of causal multi-head self-attention, learned positional embeddings, layer normalization (pre-norm configuration), and residual feed-forward networks without relying on high-level transformer abstractions (`torch.nn.Transformer`).
 - **Hardware Agnostic:** Optimized for mixed environments, featuring MPS support for Apple Silicon debugging and native CUDA execution with pinned memory for GPU-accelerated training.
 - **Efficient Streaming:** Memory-mapped binary dataset streaming (`np.memmap`) for zero-overhead token ingestion across large pre-training corpora.
 - **Empirical Telemetry:** Full checkpoint resumption and granular loss monitoring tracking convergence down to an authentic validation plateau.
@@ -53,33 +53,22 @@ The model was pre-trained on a custom corpus of algorithmic C++ source code proc
 
 ![algo-lm Pre-training Loss Convergence](eval/loss_curve.png)
 
-> **Empirical Takeaway:** The model demonstrates robust convergence, breaking past the $1.0$ loss barrier by step $2,000$. The validation curve reaches its global minimum at step **4,500** ($0.8851$), after which a subtle upward divergence marks the onset of memorization, making the 4,500-step checkpoint the designated pre-trained base for downstream tasks.
+> **Empirical Takeaway:** The model demonstrates robust convergence, breaking past the $1.0$ loss barrier by step $2,000$. The validation curve reaches its global minimum at step **4,500** ($0.8851$), after which a subtle upward divergence marks the onset of memorization, establishing the 4,500-step checkpoint as the optimal pre-trained base model.
 
 ---
 
 ## Qualitative Capabilities (Base Pre-Trained)
 
-At a cross-entropy loss of $\sim 0.88$, `algo-lm` exhibits high structural awareness of C++ competitive programming conventions:
+At a validation cross-entropy loss of $\sim 0.88$, `algo-lm` exhibits strong structural awareness of C++ competitive programming conventions:
 - Accurately constructs `#include <bits/stdc++.h>` headers and macro definitions (`boost`, fast I/O idioms).
 - Employs valid function prototypes (`void solve()`, `int main()`).
 - Replicates common variable naming schemes and problem idioms (`cin >> n`, dynamic programming arrays, standard loop bounds).
 
 ---
 
-## Roadmap & Future Work
+## Quick Start
 
-<!-- 
-TODO: Instruction Fine-Tuning Phase (Phase 3)
-1. Synthesize instruction dataset formatted with explicit dialogue tokens:
-   <|user|> Problem statement / function signature <|bot|> Solution implementation
-2. Implement SFT trainer with cross-entropy masking over prompt tokens (train on response only).
-3. Switch from fixed learning rate to Cosine Annealing with Warmup (lr_min = 3e-5).
--->
-- [x] Phase 1: Minimal Bigram & Toy Shakespeare baseline
-- [x] Phase 2: From-scratch 49M parameter GPT-2 pre-training on C++ corpus
-- [ ] **Phase 3: Supervised Fine-Tuning (SFT)**
-  - Synthetic dataset generation pairing natural language algorithmic tasks with clean, modular C++ solutions.
-  - Target loss computation exclusively on assistant response tokens.
-- [ ] **Phase 4: Inference Optimization**
-  - Implement Key-Value (KV) caching to eliminate redundant attention computations during autoregressive generation.
-  - Add Top-$p$ (nucleus) and temperature-calibrated sampling scripts.
+```bash
+git clone [https://github.com/VaiBrahma/algo-lm.git](https://github.com/VaiBrahma/algo-lm.git)
+cd algo-lm
+pip install torch numpy tiktoken
